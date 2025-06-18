@@ -333,3 +333,29 @@ task.delay(2, function()
 	end)
 end)
 
+-- Create the Toggle Button for Player Names
+local toggleNameBtn = Instance.new("TextButton")
+toggleNameBtn.Name = "ToggleNameBtn"
+toggleNameBtn.Size = UDim2.new(0, 130, 0, 30)
+toggleNameBtn.Position = UDim2.new(0, 10, 0, 130) -- adjust as needed
+toggleNameBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggleNameBtn.Text = "Names: OFF"
+toggleNameBtn.Parent = screenGui
+
+local namesEnabled = false
+
+toggleNameBtn.MouseButton1Click:Connect(function()
+	namesEnabled = not namesEnabled
+	toggleNameBtn.Text = namesEnabled and "Names: ON" or "Names: OFF"
+	toggleNameBtn.BackgroundColor3 = namesEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+
+	-- Fire Remote or call your name visibility logic
+	for _, player in pairs(game.Players:GetPlayers()) do
+		if player.Character and player.Character:FindFirstChild("Head") then
+			local tag = player.Character.Head:FindFirstChild("NameTag")
+			if tag then
+				tag.Enabled = namesEnabled
+			end
+		end
+	end
+end)
