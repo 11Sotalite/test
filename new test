@@ -1,0 +1,391 @@
+-- [ESP SETTINGS]
+_G.FriendColor = Color3.fromRGB(0, 0, 255)
+_G.EnemyColor = Color3.fromRGB(255, 0, 0)
+_G.UseTeamColor = true
+_G.ESPEnabled = false
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+
+-- [GUI SETUP]
+local gui = Instance.new("ScreenGui")
+gui.Name = "ESPGUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- [GUI HOLDER]
+local holder = Instance.new("Frame")
+holder.Size = UDim2.new(0, 250, 0, 145)
+holder.Position = UDim2.new(0, 10, 0, 10)
+holder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+holder.ClipsDescendants = true
+holder.Active = true
+holder.Draggable = true
+holder.Selectable = true
+holder.Parent = gui
+Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 10)
+
+-- [HEADER]
+local title = Instance.new("TextLabel", holder)
+title.Text = "AS ESP"
+title.Size = UDim2.new(1, -65, 0, 25)
+title.Position = UDim2.new(0, 10, 0, 10)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local minimize = Instance.new("TextButton", holder)
+minimize.Size = UDim2.new(0, 25, 0, 25)
+minimize.Position = UDim2.new(1, -70, 0, 10)
+minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+minimize.TextColor3 = Color3.new(1, 1, 1)
+minimize.Font = Enum.Font.SourceSansBold
+minimize.TextSize = 18
+Instance.new("UICorner", minimize).CornerRadius = UDim.new(0, 6)
+
+local close = Instance.new("TextButton", holder)
+close.Size = UDim2.new(0, 25, 0, 25)
+close.Position = UDim2.new(1, -30, 0, 10)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(140, 40, 40)
+close.TextColor3 = Color3.new(1, 1, 1)
+close.Font = Enum.Font.SourceSansBold
+close.TextSize = 18
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
+
+-- [TOGGLE BUTTON + RAINBOW]
+local toggle = Instance.new("TextButton", holder)
+toggle.Size = UDim2.new(1, -20, 0, 32)
+toggle.Position = UDim2.new(0, 10, 1, -42)
+toggle.Text = _G.ESPEnabled and "ESP: ON" or "ESP: OFF"
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.BackgroundColor3 = _G.ESPEnabled and Color3.fromRGB(170, 0, 0) or Color3.fromRGB(80, 80, 80)
+toggle.Font = Enum.Font.SourceSansBold
+toggle.TextSize = 16
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 6)
+
+task.spawn(function()
+	while toggle.Parent do
+		if _G.ESPEnabled then
+			local hue = (tick() * 0.25) % 1
+			toggle.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+		else
+			toggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+		end
+		task.wait(0.03)
+	end
+end)
+
+toggle.MouseButton1Click:Connect(function()
+	_G.ESPEnabled = not _G.ESPEnabled
+	toggle.Text = _G.ESPEnabled and "ESP: ON" or "ESP: OFF"
+end)
+-- [CONFIRMATION DIALOG]
+local confirm = Instance.new("Frame", gui)
+confirm.AnchorPoint = Vector2.new(0.5, 0.5)
+confirm.Position = UDim2.new(0.5, 0, 0.5, 0)
+confirm.Size = UDim2.new(0, 200, 0, 90)
+confirm.Visible = false
+confirm.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+confirm.ZIndex = 10
+Instance.new("UICorner", confirm).CornerRadius = UDim.new(0, 8)
+
+local question = Instance.new("TextLabel", confirm)
+question.Size = UDim2.new(1, 0, 0, 30)
+question.Position = UDim2.new(0, 0, 0, 5)
+question.Text = "Are you sure?"
+question.TextColor3 = Color3.new(1, 1, 1)
+question.BackgroundTransparency = 1
+question.Font = Enum.Font.SourceSansBold
+question.TextSize = 18
+question.ZIndex = 11
+
+local yes = Instance.new("TextButton", confirm)
+yes.Size = UDim2.new(0.5, -15, 0, 25)
+yes.Position = UDim2.new(0, 10, 1, -35)
+yes.Text = "Yes"
+yes.TextColor3 = Color3.new(1, 1, 1)
+yes.BackgroundColor3 = Color3.fromRGB(60, 130, 60)
+yes.Font = Enum.Font.SourceSansBold
+yes.TextSize = 16
+yes.ZIndex = 11
+Instance.new("UICorner", yes).CornerRadius = UDim.new(0, 6)
+
+local no = Instance.new("TextButton", confirm)
+no.Size = UDim2.new(0.5, -15, 0, 25)
+no.Position = UDim2.new(0.5, 5, 1, -35)
+no.Text = "No"
+no.TextColor3 = Color3.new(1, 1, 1)
+no.BackgroundColor3 = Color3.fromRGB(130, 60, 60)
+no.Font = Enum.Font.SourceSansBold
+no.TextSize = 16
+no.ZIndex = 11
+Instance.new("UICorner", no).CornerRadius = UDim.new(0, 6)
+
+-- [BEHAVIOR]
+local isMinimized = false
+local fullSize = holder.Size
+local minSize = UDim2.new(0, 250, 0, 45)
+local btnSize = toggle.Size
+local btnPos = toggle.Position
+
+minimize.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	minimize.Text = isMinimized and "+" or "-"
+	TweenService:Create(holder, TweenInfo.new(0.35), { Size = isMinimized and minSize or fullSize }):Play()
+	TweenService:Create(toggle, TweenInfo.new(0.35), {
+		Size = isMinimized and UDim2.new(1, -20, 0, 0) or btnSize,
+		Position = isMinimized and UDim2.new(0, 10, 0, 35) or btnPos,
+		BackgroundTransparency = isMinimized and 1 or 0,
+		TextTransparency = isMinimized and 1 or 0
+	}):Play()
+
+  TweenService:Create(nameToggle, TweenInfo.new(0.35), {
+	Size = isMinimized and UDim2.new(1, -20, 0, 0) or UDim2.new(1, -20, 0, 32),
+	Position = isMinimized and UDim2.new(0, 10, 0, 35) or UDim2.new(0, 10, 1, -80),
+	BackgroundTransparency = isMinimized and 1 or 0,
+	TextTransparency = isMinimized and 1 or 0
+}):Play()
+end)
+
+close.MouseButton1Click:Connect(function()
+	confirm.Visible = true
+end)
+
+no.MouseButton1Click:Connect(function()
+	confirm.Visible = false
+end)
+
+yes.MouseButton1Click:Connect(function()
+	_G.ESPEnabled = false
+	_G.ShowNames = false
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr.Character then
+			local tag = plr.Character:FindFirstChild("NameTag")
+			if tag then
+				tag:Destroy()
+			end
+		end
+	end
+
+	gui:Destroy()
+end)
+
+-- [ESP LOOP]
+local function addESP(plr, color)
+	if plr.Character and not plr.Character:FindFirstChild("GetReal") then
+		local h = Instance.new("Highlight")
+		h.Name = "GetReal"
+		h.Adornee = plr.Character
+		h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		h.FillColor = color
+		h.FillTransparency = 0.5
+		h.OutlineTransparency = 1
+		h.Parent = plr.Character
+	elseif plr.Character and plr.Character:FindFirstChild("GetReal") then
+		plr.Character.GetReal.FillColor = color
+	end
+end
+
+RunService.Heartbeat:Connect(function()
+
+-- [DISPLAY NAME LOOP]
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local tag = plr.Character:FindFirstChild("NameTag")
+			if _G.ShowNames then
+				if not tag then
+					local bb = Instance.new("BillboardGui")
+					bb.Name = "NameTag"
+					bb.Size = UDim2.new(0, 200, 0, 30)
+					bb.StudsOffset = Vector3.new(0, 3, 0)
+					bb.AlwaysOnTop = true
+					bb.Adornee = plr.Character:FindFirstChild("HumanoidRootPart")
+
+					local label = Instance.new("TextLabel")
+					label.Size = UDim2.new(1, 0, 1, 0)
+					label.BackgroundTransparency = 1
+					label.TextColor3 = Color3.new(1, 1, 1)
+					label.TextStrokeTransparency = 0.5
+					label.Font = Enum.Font.SourceSansBold
+					label.TextSize = 14
+					label.Text = plr.DisplayName
+					label.Parent = bb
+
+					bb.Parent = plr.Character
+				else
+					tag.TextLabel.Text = plr.DisplayName
+				end
+			elseif tag then
+				tag:Destroy()
+			end
+		end
+	end
+	
+for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			local h = plr.Character:FindFirstChild("GetReal")
+			if _G.ESPEnabled then
+				local color = _G.UseTeamColor and plr.TeamColor.Color or
+					((plr.TeamColor == LocalPlayer.TeamColor) and _G.FriendColor or _G.EnemyColor)
+				addESP(plr, color)
+			elseif h then
+				h:Destroy()
+			end
+		end
+	end
+end)
+
+-- [NAME TOGGLE BUTTON]
+local nameToggle = Instance.new("TextButton", holder)
+nameToggle.Size = UDim2.new(1, -20, 0, 32)
+nameToggle.Position = UDim2.new(0, 10, 1, -80)
+nameToggle.Text = "Names: OFF"
+nameToggle.TextColor3 = Color3.new(1, 1, 1)
+nameToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+nameToggle.Font = Enum.Font.SourceSansBold
+nameToggle.TextSize = 16
+Instance.new("UICorner", nameToggle).CornerRadius = UDim.new(0, 6)
+
+_G.ShowNames = false
+
+nameToggle.MouseButton1Click:Connect(function()
+	_G.ShowNames = not _G.ShowNames
+	nameToggle.Text = _G.ShowNames and "Names: ON" or "Names: OFF"
+end)
+
+-- [RAINBOW LOOP FOR NAME BUTTON]
+task.spawn(function()
+	while nameToggle.Parent do
+		if _G.ShowNames then
+			local hue = (tick() * 0.25) % 1
+			nameToggle.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+		else
+			nameToggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+		end
+		task.wait(0.03)
+	end
+end)
+
+-- [ESP LOADING SCREEN]
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local loadingScreen = Instance.new("ScreenGui")
+loadingScreen.Name = "LoadingScreen"
+loadingScreen.ResetOnSpawn = false
+loadingScreen.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+bg.Parent = loadingScreen
+
+local loadingText = Instance.new("TextLabel", bg)
+loadingText.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingText.Position = UDim2.new(0.5, 0, 0.5, 0)
+loadingText.Text = "Loading ESP GUI..."
+loadingText.Font = Enum.Font.SourceSansBold
+loadingText.TextSize = 24
+loadingText.TextColor3 = Color3.fromHSV(0, 0.8, 1)
+loadingText.BackgroundTransparency = 1
+
+-- Rainbow shimmer effect
+task.spawn(function()
+	while loadingText and loadingText.Parent do
+		local hue = (tick() * 0.5) % 1
+		loadingText.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
+		task.wait(0.03)
+	end
+end)
+
+-- Delayed GUI execution hook
+task.delay(2, function()
+	local fade = TweenService:Create(bg, TweenInfo.new(0.6), { BackgroundTransparency = 1 })
+	local textFade = TweenService:Create(loadingText, TweenInfo.new(0.6), { TextTransparency = 1 })
+	fade:Play()
+	textFade:Play()
+	fade.Completed:Wait()
+	loadingScreen:Destroy()
+
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = "Advanced Sotalite ESP Loaded",
+			Text = "Made by SotaliteScripts",
+			Duration = 4
+		})
+		task.wait(0.5)
+		StarterGui:SetCore("SendNotification", {
+			Title = "Powered by Github",
+			Text = "Enjoy the ASESP script ✨",
+			Duration = 4
+		})
+	end)
+end)
+
+-- Gui button for health
+local ScreenGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("YourGuiName")
+local healthButton = Instance.new("TextButton")
+
+healthButton.Name = "HealthToggle"
+healthButton.Size = UDim2.new(0, 120, 0, 35)
+healthButton.Position = UDim2.new(0, 10, 0, 195)
+healthButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
+healthButton.BorderSizePixel = 0
+healthButton.Text = "Health: OFF"
+healthButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+healthButton.TextSize = 14
+healthButton.Font = Enum.Font.GothamBold
+healthButton.Parent = ScreenGui
+
+local showHealth = false
+
+healthButton.MouseButton1Click:Connect(function()
+	showHealth = not showHealth
+	healthButton.BackgroundColor3 = showHealth and Color3.fromRGB(85, 255, 85) or Color3.fromRGB(255, 85, 85)
+	healthButton.Text = showHealth and "Health: ON" or "Health: OFF"
+
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+			local tag = player.Character:FindFirstChild("HealthDisplay")
+			if showHealth then
+				if not tag then
+					local billboard = Instance.new("BillboardGui", player.Character)
+					billboard.Name = "HealthDisplay"
+					billboard.Size = UDim2.new(0, 100, 0, 40)
+					billboard.Adornee = player.Character:FindFirstChild("Head")
+					billboard.AlwaysOnTop = true
+
+					local text = Instance.new("TextLabel", billboard)
+					text.Size = UDim2.new(1, 0, 1, 0)
+					text.BackgroundTransparency = 1
+					text.TextColor3 = Color3.new(1, 0, 0)
+					text.TextScaled = true
+					text.Font = Enum.Font.SourceSans
+					
+					text.Text = math.floor(player.Character.Humanoid.Health) .. " / " .. math.floor(player.Character.Humanoid.MaxHealth)
+
+					-- Optional: Update health every second
+					spawn(function()
+						while showHealth and billboard.Parent do
+							text.Text = math.floor(player.Character.Humanoid.Health) .. " / " .. math.floor(player.Character.Humanoid.MaxHealth)
+							wait(1)
+						end
+					end)
+				end
+			elseif tag then
+				tag:Destroy()
+			end
+		end
+	end
+end)
